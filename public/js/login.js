@@ -83,6 +83,16 @@ window.addEventListener('load', function() {
       var cb = callbacks[data.id];
       if (cb) {
         console.log('HAVE A CALLBACK!');
+        
+        // errors are strnagely encoded with an error_subtype which is a string
+        // {"id":"crWHzgAI","result":{"error":"server_error","error_subtype":"{\n  \"error\" : \"invalid_client\",\n  \"error_description\" : \"The OAuth client was not found.\"\n}"},"rpcToken":"rOphK-QbY7DRCi1C"}
+        
+        if (typeof data.result == 'object' && data.result.error) {
+          return cb(null, data.result.error);
+        }
+        
+        
+        
         cb(null, data.result);
         delete callbacks[data.id];
       }
@@ -112,6 +122,28 @@ window.addEventListener('load', function() {
             // NOTE: result seems to be undefined in cases where session slector was not previously set
             
             if (!result) { return; }
+            
+            
+            // NOTE: errors if clientID is wrong (ie, set to 3 or something).  find other error conditions
+            var params = {
+              clientId: clientID,
+              loginHint: result.hint,
+              sessionSelector: {
+                domain: window.location.origin
+              },
+              request: {
+                response_type: 'token id_token',
+                scope: 'profile email'
+              },
+              forceRefresh: false
+            }
+            
+            sendMessage('getTokenResponse', params, function(err, result) {
+              console.log('GOT TOKENS');
+              console.log(err);
+              console.log(result);
+              
+            });
             
             
           });
